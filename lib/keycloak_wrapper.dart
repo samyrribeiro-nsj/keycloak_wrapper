@@ -6,10 +6,12 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:synchronized/synchronized.dart';
+
+export 'package:flutter_appauth/flutter_appauth.dart' show ExternalUserAgent;
 
 part 'src/config.dart';
 part 'src/constants.dart';

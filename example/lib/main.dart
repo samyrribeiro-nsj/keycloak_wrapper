@@ -1,26 +1,34 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
 
-final keycloakConfig = KeycloakConfig(
-  bundleIdentifier: 'com.example.demo',
-  clientId: '<client_id>',
-  frontendUrl: '<frontend_url>',
-  realm: '<realm>',
-);
-final keycloakWrapper = KeycloakWrapper(config: keycloakConfig);
+final keycloakWrapper = KeycloakWrapper();
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // Initialize the plugin at the start of your app.
-  keycloakWrapper.initialize();
+  keycloakWrapper.initialize(
+    config: KeycloakConfig(
+      bundleIdentifier: 'com.example.demo',
+      clientId: 'myclient',
+      frontendUrl: Platform.isIOS
+          ? 'http://localhost:8080'
+          : 'http://10.0.2.2:8080',
+      realm: 'myrealm',
+    ),
+  );
   // Listen to the errors caught by the plugin.
-  keycloakWrapper.onError = (message, _, __) {
-    // Display the error message inside a snackbar.
-    scaffoldMessengerKey.currentState
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  };
+  if (kReleaseMode) {
+    keycloakWrapper.onError = (message, _, _) {
+      // Display the error message inside a snackbar.
+      scaffoldMessengerKey.currentState
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(message)));
+    };
+  }
   runApp(const MyApp());
 }
 
@@ -52,65 +60,87 @@ class LoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: CircularProgressIndicator.adaptive()));
+      const Scaffold(body: Center(child: CircularProgressIndicator()));
 }
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  var isLoading = false;
 
   // Login using the given configuration.
   Future<void> login() async {
+    setState(() => isLoading = true);
     // Check if user has successfully logged in.
     final isLoggedIn = await keycloakWrapper.login();
 
     if (isLoggedIn) debugPrint('User has successfully logged in.');
+    setState(() => isLoading = false);
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: Center(
-      child: FilledButton(onPressed: login, child: const Text('Login')),
-    ),
-  );
+  Widget build(BuildContext context) => isLoading
+      ? LoadingScreen()
+      : Scaffold(
+          body: Center(
+            child: FilledButton(onPressed: login, child: const Text('Login')),
+          ),
+        );
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  var isLoading = false;
 
   // Logout from the current realm.
   Future<void> logout() async {
+    setState(() => isLoading = true);
     // Check if user has successfully logged out.
     final isLoggedOut = await keycloakWrapper.logout();
 
     if (isLoggedOut) debugPrint('User has successfully logged out.');
+    setState(() => isLoading = false);
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FutureBuilder(
-            // Retrieve the user information.
-            future: keycloakWrapper.getUserInfo(),
-            builder: (context, snapshot) {
-              final userInfo = snapshot.data ?? {};
+  Widget build(BuildContext context) => isLoading
+      ? LoadingScreen()
+      : Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FutureBuilder(
+                  // Retrieve the user information.
+                  future: keycloakWrapper.getUserInfo(),
+                  builder: (context, snapshot) {
+                    final userInfo = snapshot.data ?? {};
 
-              // Display the retrieved user information.
-              return Column(
-                children: [
-                  ...userInfo.entries.map(
-                    (entry) => Text('${entry.key}: ${entry.value}'),
-                  ),
-                  if (userInfo.isNotEmpty) const SizedBox(height: 20),
-                ],
-              );
-            },
+                    // Display the retrieved user information.
+                    return Column(
+                      children: [
+                        ...userInfo.entries.map(
+                          (n) => Text('${n.key}: ${n.value}'),
+                        ),
+                        if (userInfo.isNotEmpty) const SizedBox(height: 20),
+                      ],
+                    );
+                  },
+                ),
+                FilledButton(onPressed: logout, child: const Text('Logout')),
+              ],
+            ),
           ),
-          FilledButton(onPressed: logout, child: const Text('Logout')),
-        ],
-      ),
-    ),
-  );
+        );
 }

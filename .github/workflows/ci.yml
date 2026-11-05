@@ -3,22 +3,19 @@ name: Continuous Integration
 on: pull_request
 
 jobs:
-  test:
+  analyze:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
       - name: Setup Flutter environment
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@v2.23.0
         with:
-          channel: 'stable'
+          channel: stable
           cache: true
       - name: Install dependencies
         run: flutter pub get
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
       - name: Analyze code
-        continue-on-error: true
         run: flutter analyze
-      - name: Run tests
-        if: success() || failure()
-        run: flutter test

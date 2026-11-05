@@ -4,82 +4,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.7] - 2025/12/16
+## Fork Nasajon (sobre a 1.5.1) - 2026-11-05
 
-- Added `synchronized` package to lock `exchangeTokens`, preventing multiple calls and `flutter_appauth` concurrent error
+Diferenças mantidas de propósito em relação ao upstream `fa-fifi/keycloak_wrapper`:
+- Chaves de armazenamento legadas (`keycloak:hasRunBefore`, `keycloak-refresh-token`) em vez das novas `keycloak_wrapper:*`: a renomeação faria o `initialize` apagar o secure storage (e o refresh token) na primeira execução após a atualização, derrubando a sessão de todos os usuários já instalados.
+- `token_failed` só descarta a sessão (reset + `initialize`) e só emite `false` no `authenticationStream` quando o servidor rejeitou o grant (`invalid_grant`); em falha transitória (rede, 5xx) o refresh token continua guardado e a próxima troca tenta de novo.
 
-## [1.4.6] - 2025/7/2
+## [1.5.1] - 2026-09-14
 
-- Update dependencies to the latest version.
-- Automate publishing using the official workflow provided by Dart team.
-- Rename `updateToken` method to `exchangeTokens` method.
+### Added
+- Add optional `loginHint` parameter to login method (#92). Thanks @FelipeQueFez for the PR.
 
-## [1.4.4] - 2024/11/12
+### Changed
+- Bump flutter_appauth from 11.0.0 to 12.0.0.
+- Migrate example app to built-in Kotlin.
+- Migrate example app to UIKit scene-based life cycle.
 
-- Change `hasRunbefore` key value to avoid similar values.
-- Update README.md to include token explanation.
-- Bump `flutter_appauth` from 7.0.1 to 8.0.0+1.
+## [1.5.0] - 2026-02-26
 
-## [1.4.3] - 2024/10/14
+### Added
+- Add `externalUserAgent` parameter to `KeycloakConfig` for iOS/macOS authentication customization (#74).
+- Support for `ExternalUserAgent` enum with three options:
+  - `asWebAuthenticationSession` (default): Uses ASWebAuthenticationSession APIs.
+  - `ephemeralAsWebAuthenticationSession`: Uses ephemeral sessions for enhanced privacy.
+  - `sfSafariViewController`: Uses SFSafariViewController to avoid system prompts during logout.
+- Add `docker-compose.yaml` file to run Keycloak container.
 
-- Update dependencies.
-- Update default scopes value.
+### Fixed
+- Handle "token_failed" error by automatically logging the user out if the session is killed on the server (#57).
+- Disallow multiple concurrent call operations (#72).
 
-## [1.4.1] - 2024/9/4
+### Changed
+- BREAKING: Configuration is now a required parameter to the `initialize` method. Refer to the example for the changes.
+- The `getUserInfo` method will return the cached user information if the request fails or is offline (#41).
 
-- Clear secure storage during each reinstallation. [#42](https://github.com/fa-fifi/keycloak_wrapper/issues/42)
-- Change example app package name.
-
-## [1.4.0] - 2024/8/22
-
-- Unawait `updateToken` during initialization.
-- Create a fully working example app.
-- Remove deprecated `jwtDecode` method.
-
-## [1.3.0] - 2024/7/16
-
-- Create `JWT` class to manage JSON web token.
-- Refresh token using `updateToken` method.
-- Configure additional scopes.
-
-## [1.2.2] - 2024/6/22
-
-- Update dependencies.
-- Update CI/CD pipelines.
-
-## [1.1.2] - 2024/4/1
-
-- Rename repository.
-
-## [1.1.1] - 2024/3/20
-
-- Update the default error message.
-- Make `isInitialized` variable as private.
-
-## [1.1.0] - 2024/3/04
-
-- Ensure the validity of `bundleIdentifier` value. #29
-- Remove `redirectUrl` parameter from `KeycloakLogin` constructor.
-- Update readme.md.
-
-## [1.0.3] - 2024/2/26
-
-- Configure your own custom `redirectUrl` instead of using `bundleIdentifier` value.
-- Update default onError function.
-
-## [1.0.2] - 2024/2/23
-
-- Apply stricter linter rules.
-- Update dependencies.
-
-## [1.0.1] - 2024/2/21
-
-- Assert the initialization method to be called first.
-- Deprecate `getWithBearerAuthentication()` function.
-- Add a new badge inside README.md.
-
-## [1.0.0] - 2023/12/22
-
-- Initial stable release of this package.
-- Add contribution guidelines.
-- Improve automated publishing workflow.
+### Removed
+- Deprecated `updateToken` method.
+- All test files since users must log in via the webview which is untestable.
